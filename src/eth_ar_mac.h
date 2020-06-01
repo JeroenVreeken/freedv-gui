@@ -40,7 +40,7 @@ static inline int eth_ar_call2mac(uint8_t mac[6], const char *callsign, int ssid
     };
     
     uint64_t add = 0;
-    size_t i;
+    int i;
 	
     if (ssid > 15 || ssid < 0)
         return -1;
@@ -48,7 +48,7 @@ static inline int eth_ar_call2mac(uint8_t mac[6], const char *callsign, int ssid
     for (i = 7; i >= 0; i--) {
         char c;
 		
-        if (i >= strlen(callsign)) {
+        if ((size_t)i >= strlen(callsign)) {
             c = 0;
         } else {
             c = toupper(callsign[i]);

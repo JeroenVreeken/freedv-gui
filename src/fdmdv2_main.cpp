@@ -2950,6 +2950,7 @@ void MainFrame::OnTogBtnOnOff(wxCommandEvent& event)
             if (wxGetApp().m_speexpp_enable)
                 speex_preprocess_state_destroy(g_speex_st);
 	    tap_destroy(g_fd_tap);
+	    g_fd_tap = -1;
         }
 
         m_newMicInFilter = m_newSpkOutFilter = true;

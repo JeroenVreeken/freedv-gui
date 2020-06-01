@@ -49,6 +49,7 @@ int tap_alloc(const char *dev, uint8_t mac[6])
 
 	/* open the tun device */
 	if((fd = open(tundev, O_RDWR)) < 0 ) {
+		perror("Opening tun device failed");
 		return -1;
 	}
 
