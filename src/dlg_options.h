@@ -89,6 +89,12 @@ class OptionsDlg : public wxDialog
 
         wxCheckBox* m_ckHalfDuplex;
 
+        /**/
+	
+	wxTextCtrl   *m_txtCtrlheader;
+        wxCheckBox   *m_ckboxTAP;
+	wxTextCtrl   *m_txtCtrlnetdev;
+
         /* Voice Keyer */
 
         wxButton     *m_buttonChooseVoiceKeyerWaveFile;

@@ -141,6 +141,30 @@ OptionsDlg::OptionsDlg(wxWindow* parent, wxWindowID id, const wxString& title, c
     bSizer30->Add(sbSizer_duplex,0, wxALIGN_CENTER_HORIZONTAL|wxALL|wxEXPAND, 3);
 
     //------------------------------
+    // Data channel
+    //------------------------------
+
+    wxStaticBoxSizer* sbSizer_datachannel;
+    wxStaticBox *sb_header = new wxStaticBox(this, wxID_ANY, _("Data channel"));
+    sbSizer_datachannel = new wxStaticBoxSizer(sb_header, wxHORIZONTAL);
+
+
+    wxStaticText *m_staticTextCallsign = new wxStaticText(this, wxID_ANY, _("Callsign: "), wxDefaultPosition, wxDefaultSize, 0);
+    sbSizer_datachannel->Add(m_staticTextCallsign, 0, wxALIGN_CENTER_VERTICAL, 5);    
+    m_txtCtrlheader = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(100,-1), 0);
+    m_txtCtrlheader->SetToolTip(_("Callsign"));
+    sbSizer_datachannel->Add(m_txtCtrlheader, 0, wxALIGN_LEFT, 0);
+
+    m_ckboxTAP = new wxCheckBox(this, wxID_ANY, _("Creacte TAP device: "), wxDefaultPosition, wxDefaultSize, wxCHK_2STATE);
+    sbSizer_datachannel->Add(m_ckboxTAP, 0, wxALIGN_LEFT, 0);
+
+    m_txtCtrlnetdev = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(100,-1), 0);
+    m_txtCtrlnetdev->SetToolTip(_("Network device name"));
+    sbSizer_datachannel->Add(m_txtCtrlnetdev, 0, wxALIGN_LEFT, 0);
+
+    bSizer30->Add(sbSizer_datachannel,0, wxALIGN_CENTER_HORIZONTAL|wxALL|wxEXPAND, 3);
+ 
+    //------------------------------
     // Test Frames/Channel simulation check box
     //------------------------------
 
@@ -449,6 +473,10 @@ void OptionsDlg::ExchangeData(int inout, bool storePersistent)
     if(inout == EXCHANGE_DATA_IN)
     {
         m_txtCtrlCallSign->SetValue(wxGetApp().m_callSign);
+	
+	m_txtCtrlheader->SetValue(wxGetApp().m_data_header);
+	m_ckboxTAP->SetValue(wxGetApp().m_TAP);
+	m_txtCtrlnetdev->SetValue(wxGetApp().m_netdev);
 
         /* Voice Keyer */
 
@@ -515,6 +543,10 @@ void OptionsDlg::ExchangeData(int inout, bool storePersistent)
     if(inout == EXCHANGE_DATA_OUT)
     {
         wxGetApp().m_callSign = m_txtCtrlCallSign->GetValue();
+	
+	wxGetApp().m_data_header = m_txtCtrlheader->GetValue();
+	wxGetApp().m_TAP = m_ckboxTAP->GetValue();
+	wxGetApp().m_netdev = m_txtCtrlnetdev->GetValue();
 
         wxGetApp().m_boolHalfDuplex = m_ckHalfDuplex->GetValue();
         pConfig->Write(wxT("/Rig/HalfDuplex"), wxGetApp().m_boolHalfDuplex);
@@ -646,6 +678,10 @@ void OptionsDlg::ExchangeData(int inout, bool storePersistent)
             pConfig->Write(wxT("/Debug/console"), wxGetApp().m_debug_console);
 #endif
             pConfig->Write(wxT("/Debug/APIverbose"), g_freedv_verbose);
+
+            pConfig->Write(wxT("/DataChannel/Header"), wxGetApp().m_data_header);
+            pConfig->Write(wxT("/DataChannel/TAP"), wxGetApp().m_TAP);
+            pConfig->Write(wxT("/DataChannel/Netdev"), wxGetApp().m_netdev);
 
             pConfig->Flush();
         }

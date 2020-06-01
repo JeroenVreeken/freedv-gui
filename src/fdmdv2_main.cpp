@@ -167,6 +167,11 @@ wxDatagramSocket *g_sock;
 struct horus *g_horus;
 SRC_STATE    *g_horus_src;
 
+
+// Data channel
+
+int g_fd_tap = -1;
+
 // WxWidgets - initialize the application
 
 IMPLEMENT_APP(MainApp);
@@ -529,6 +534,10 @@ MainFrame::MainFrame(wxString plugInName, wxWindow *parent) : TopFrame(plugInNam
     wxGetApp().m_textEncoding = pConfig->Read("/Data/TextEncoding", 1);
     wxGetApp().m_enable_checksum = pConfig->Read("/Data/EnableChecksumOnMsgRx", f);
 
+    wxGetApp().m_data_header = pConfig->Read("/DataChannel/Header", wxT(""));
+    wxGetApp().m_TAP = pConfig->Read("/DataChannel/TAP", f);
+    wxGetApp().m_netdev = pConfig->Read("/DataChannel/Netdev", wxT("freedv"));
+
     wxGetApp().m_events = pConfig->Read("/Events/enable", f);
     wxGetApp().m_events_spam_timer = (int)pConfig->Read(wxT("/Events/spam_timer"), 10);
     wxGetApp().m_events_regexp_match = pConfig->Read("/Events/regexp_match", wxT("s=(.*)"));
@@ -584,6 +593,10 @@ MainFrame::MainFrame(wxString plugInName, wxWindow *parent) : TopFrame(plugInNam
 #endif
     if (mode == 8 && isAvxPresent)
         m_rb2020->SetValue(1);
+#if defined(FREEDV_MODE_6000)
+    if (mode == 9)
+        m_rb6000->SetValue(1);
+#endif
     pConfig->SetPath(wxT("/"));
 
 //    this->Connect(m_menuItemHelpUpdates->GetId(), wxEVT_UPDATE_UI, wxUpdateUIEventHandler(TopFrame::OnHelpCheckUpdatesUI));
@@ -838,6 +851,8 @@ MainFrame::~MainFrame()
 #endif
         if (m_rb2020->GetValue())
             mode = 8;
+        if (m_rb6000->GetValue())
+            mode = 9;
        pConfig->Write(wxT("/Audio/mode"), mode);
     }
 
@@ -2657,6 +2672,7 @@ void MainFrame::OnTogBtnOnOff(wxCommandEvent& event)
         m_rbHorusBinary->Disable();
 #endif
         m_rb2020->Disable();
+        m_rb6000->Disable();
         if (m_rbPlugIn != NULL)
             m_rbPlugIn->Disable();
 
@@ -2714,6 +2730,11 @@ void MainFrame::OnTogBtnOnOff(wxCommandEvent& event)
             g_Nc = 31;                         /* TODO: be nice if we didn't have to hard code this, maybe API call? */
             m_panelScatter->setNc(g_Nc);
         }
+#if defined(FREEDV_MODE_6000)
+        if (m_rb6000->GetValue()) {
+            g_mode = FREEDV_MODE_6000;
+        }
+#endif
 
         if (g_mode != -1) { 
             // init freedv states
@@ -2750,6 +2771,15 @@ void MainFrame::OnTogBtnOnOff(wxCommandEvent& event)
                 freedv_set_verbose(g_pfreedv, 0);
             
             freedv_set_callback_txt(g_pfreedv, &my_put_next_rx_char, &my_get_next_tx_char, NULL);
+
+            freedv_set_callback_data(g_pfreedv, &my_datarx, &my_datatx, NULL);
+	    uint8_t mac[6] = {0};
+	    eth_ar_callssid2mac(mac, wxGetApp().m_data_header.mb_str().data(), false);
+            freedv_set_data_header(g_pfreedv, mac);
+	    
+	    if (wxGetApp().m_TAP) {
+	        g_fd_tap = tap_alloc(wxGetApp().m_netdev.mb_str().data(), mac);
+	    }
 
             freedv_set_callback_error_pattern(g_pfreedv, my_freedv_put_error_pattern, (void*)m_panelTestFrameErrors);
             g_error_pattern_fifo = codec2_fifo_create(2*freedv_get_sz_error_pattern(g_pfreedv)+1);
@@ -2919,6 +2949,7 @@ void MainFrame::OnTogBtnOnOff(wxCommandEvent& event)
             freedv_close(g_pfreedv);
             if (wxGetApp().m_speexpp_enable)
                 speex_preprocess_state_destroy(g_speex_st);
+	    tap_destroy(g_fd_tap);
         }
 
         m_newMicInFilter = m_newSpkOutFilter = true;
@@ -2941,6 +2972,9 @@ void MainFrame::OnTogBtnOnOff(wxCommandEvent& event)
 #endif
         if(isAvxPresent)
             m_rb2020->Enable();
+#if defined(FREEDV_MODE_6000)
+        m_rb6000->Enable();
+#endif
         if (m_rbPlugIn != NULL)
             m_rbPlugIn->Enable();
            
@@ -4654,6 +4688,19 @@ void my_put_next_rx_char(void *callback_state, char c) {
     //fprintf(stderr, "put_next_rx_char: %c\n", (char)c);
     codec2_fifo_write(g_rxDataOutFifo, &ch, 1);
 }
+
+
+// Callbacks for data channel
+void my_datarx(void *arg, unsigned char *packet, size_t size)
+{
+    tap_rx(g_fd_tap, packet, size);
+}
+
+void my_datatx(void *arg, unsigned char *packet, size_t *size)
+{
+    *size = 0;
+}
+
 
 // Callback from FreeDv API to update error plots
 

@@ -367,6 +367,8 @@ TopFrame::TopFrame(wxString plugInName, wxWindow* parent, wxWindowID id, const w
 #endif
     m_rb2020 = new wxRadioButton( this, wxID_ANY, wxT("2020"), wxDefaultPosition, wxDefaultSize,  0);
     sbSizer_mode->Add(m_rb2020, 0, wxALIGN_LEFT|wxALL, 1);
+    m_rb6000 = new wxRadioButton( this, wxID_ANY, wxT("6000"), wxDefaultPosition, wxDefaultSize,  0);
+    sbSizer_mode->Add(m_rb6000, 0, wxALIGN_LEFT|wxALL, 1);
 
     m_rb1600->SetValue(true);
 

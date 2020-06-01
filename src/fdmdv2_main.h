@@ -222,6 +222,10 @@ class MainApp : public wxApp
 
         bool                m_snrSlow;
 
+        wxString            m_data_header;
+        bool                m_TAP;
+        wxString            m_netdev;
+
         // LPC Post Filter
         bool                m_codec2LPCPostFilterEnable;
         bool                m_codec2LPCPostFilterBassBoost;
@@ -711,6 +715,11 @@ void my_freedv_put_error_pattern(void *state, short error_pattern[], int sz_erro
 
 char my_get_next_tx_char(void *callback_state);
 void my_put_next_rx_char(void *callback_state, char c);
+
+// Data channel callbacks
+
+void my_datarx(void *arg, unsigned char *packet, size_t size);
+void my_datatx(void *arg, unsigned char *packet, size_t *size);
 
 // helper complex freq shift function
 

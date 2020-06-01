@@ -24,6 +24,8 @@
 #include "wx/wx.h"
 #include "freedv_api.h"
 #include "modem_stats.h"
+#include "tap.h"
+#include "eth_ar_mac.h"
 
 // Spectrogram and Waterfall
 

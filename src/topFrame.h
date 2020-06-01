@@ -123,6 +123,7 @@ class TopFrame : public wxFrame
         wxRadioButton *m_rbHorusBinary;
 #endif
         wxRadioButton *m_rb2020;
+        wxRadioButton *m_rb6000;
         wxRadioButton *m_rbPlugIn;
 
         // Virtual event handlers, overide them in your derived class

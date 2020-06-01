@@ -45,6 +45,8 @@ set(FREEDV_SOURCES
     sox/util.h
     sox/xmalloc.h
     sox/xmalloc.c
+    tap.cpp
+    tap.h
     topFrame.h
     version.h
     osx_interface.h
