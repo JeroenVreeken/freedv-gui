@@ -26,9 +26,13 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-int tap_alloc(const char *dev, uint8_t mac[6]);
-void tap_destroy(int tap);
+struct tap;
 
-int tap_rx(int tap, void *packet, size_t size);
+struct tap *tap_alloc(const char *dev, uint8_t mac[6]);
+void tap_destroy(struct tap *tap);
+
+int tap_rx(struct tap *tap, unsigned char *packet, size_t size);
+int tap_tx_check(struct tap *tap);
+int tap_tx_get(struct tap *tap, unsigned char *data, size_t *size);
 
 #endif

@@ -94,6 +94,8 @@ class OptionsDlg : public wxDialog
 	wxTextCtrl   *m_txtCtrlheader;
         wxCheckBox   *m_ckboxTAP;
 	wxTextCtrl   *m_txtCtrlnetdev;
+	wxTextCtrl   *m_txtCtrldelay;
+	wxTextCtrl   *m_txtCtrltail;
 
         /* Voice Keyer */
 

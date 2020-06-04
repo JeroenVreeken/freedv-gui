@@ -66,6 +66,9 @@ float g_SquelchLevel;
 int   g_analog;
 int   g_split;
 int   g_tx;
+int   g_datatx;
+int   g_tx_delay_cnt;
+int   g_tx_tail_cnt;
 float g_snr;
 bool  g_half_duplex;
 bool  g_modal;
@@ -172,7 +175,7 @@ SRC_STATE    *g_horus_src;
 
 // Data channel
 
-int g_fd_tap = -1;
+struct tap *g_tap = NULL;
 
 // WxWidgets - initialize the application
 
@@ -539,6 +542,8 @@ MainFrame::MainFrame(wxString plugInName, wxWindow *parent) : TopFrame(plugInNam
     wxGetApp().m_data_header = pConfig->Read("/DataChannel/Header", wxT(""));
     wxGetApp().m_TAP = pConfig->Read("/DataChannel/TAP", f);
     wxGetApp().m_netdev = pConfig->Read("/DataChannel/Netdev", wxT("freedv"));
+    wxGetApp().m_delay_ms = pConfig->Read("/DataChannel/Delay", (int)100);
+    wxGetApp().m_tail_ms = pConfig->Read("/DataChannel/Tail", (int)100);
 
     wxGetApp().m_events = pConfig->Read("/Events/enable", f);
     wxGetApp().m_events_spam_timer = (int)pConfig->Read(wxT("/Events/spam_timer"), 10);
@@ -1449,6 +1454,37 @@ void MainFrame::OnTimer(wxTimerEvent &evt)
         // Detect Sync state machine
 
         DetectSyncProcessEvent();
+    }
+
+
+    if (g_tx) {
+        g_tx_delay_cnt += DT * 1000;
+    } else {
+        g_tx_delay_cnt = 0;
+    }
+    g_tx_tail_cnt += DT * 1000;
+
+    if (g_tap) {
+        int q_filled = tap_tx_check(g_tap);
+        int ntxframes = freedv_data_ntxframes(g_pfreedv);
+	bool data_to_send = ntxframes || q_filled;
+	
+	// As long as we are sending data tail has not started
+	if (data_to_send)
+	    g_tx_tail_cnt = 0;
+	
+        // Do a data-only TX
+	if (data_to_send && !g_tx) {
+	    g_datatx = 1;
+	    m_btnTogPTT->SetValue(true); togglePTT();
+	}
+	
+        // nothing in the queue anymore and nothing partially transmitted
+	// Note: we also add the fifo size to our tail!
+	if (g_datatx && g_tx_tail_cnt > (wxGetApp().m_tail_ms + wxGetApp().m_fifoSize_ms)) {
+            g_datatx = 0;
+	    m_btnTogPTT->SetValue(false); togglePTT();
+	}
     }
 }
 #endif
@@ -2790,7 +2826,7 @@ void MainFrame::OnTogBtnOnOff(wxCommandEvent& event)
             freedv_set_data_header(g_pfreedv, mac);
 	    
 	    if (wxGetApp().m_TAP) {
-	        g_fd_tap = tap_alloc(wxGetApp().m_netdev.mb_str().data(), mac);
+	        g_tap = tap_alloc(wxGetApp().m_netdev.mb_str().data(), mac);
 	    }
 
             freedv_set_callback_error_pattern(g_pfreedv, my_freedv_put_error_pattern, (void*)m_panelTestFrameErrors);
@@ -2963,8 +2999,8 @@ void MainFrame::OnTogBtnOnOff(wxCommandEvent& event)
             freedv_close(g_pfreedv);
             if (wxGetApp().m_speexpp_enable)
                 speex_preprocess_state_destroy(g_speex_st);
-	    tap_destroy(g_fd_tap);
-	    g_fd_tap = -1;
+	    tap_destroy(g_tap);
+	    g_tap = NULL;
         }
 
         m_newMicInFilter = m_newSpkOutFilter = true;
@@ -4132,10 +4168,16 @@ void txRxProcessing()
 
                 if (g_mode == FREEDV_MODE_800XA) {
                     /* 800XA doesn't support complex output just yet */
-                    freedv_tx(g_pfreedv, outfreedv, infreedv);
+		    if (!g_datatx)
+                        freedv_tx(g_pfreedv, outfreedv, infreedv);
+		    else
+		        freedv_datatx(g_pfreedv, outfreedv);
                 }
                 else {
-                    freedv_comptx(g_pfreedv, tx_fdm, infreedv);
+		    if (!g_datatx)
+		        freedv_comptx(g_pfreedv, tx_fdm, infreedv);
+	            else
+		        freedv_datacomptx(g_pfreedv, tx_fdm);
   
                     freq_shift_coh(tx_fdm_offset, tx_fdm, g_TxFreqOffsetHz, freedv_get_modem_sample_rate(g_pfreedv), &g_TxFreqOffsetPhaseRect, nfreedv);
                     for(i=0; i<nfreedv; i++)
@@ -4714,12 +4756,17 @@ void my_put_next_rx_char(void *callback_state, char c) {
 // Callbacks for data channel
 void my_datarx(void *arg, unsigned char *packet, size_t size)
 {
-    tap_rx(g_fd_tap, packet, size);
+    tap_rx(g_tap, packet, size);
 }
 
 void my_datatx(void *arg, unsigned char *packet, size_t *size)
 {
-    *size = 0;
+    if (g_tap && g_tx_delay_cnt > wxGetApp().m_delay_ms) {
+        tap_tx_get(g_tap, packet, size);
+    } else
+    {
+        *size = 0;
+    }
 }
 
 

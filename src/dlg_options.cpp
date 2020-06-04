@@ -162,6 +162,16 @@ OptionsDlg::OptionsDlg(wxWindow* parent, wxWindowID id, const wxString& title, c
     m_txtCtrlnetdev->SetToolTip(_("Network device name"));
     sbSizer_datachannel->Add(m_txtCtrlnetdev, 0, wxALIGN_LEFT, 0);
 
+    wxStaticText *m_staticTextDelay = new wxStaticText(this, wxID_ANY, _(" Delay (ms):"), wxDefaultPosition, wxDefaultSize, 0);
+    sbSizer_datachannel->Add(m_staticTextDelay, 0, wxALIGN_CENTER_VERTICAL , 5);
+    m_txtCtrldelay = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(40,-1), 0);
+    sbSizer_datachannel->Add(m_txtCtrldelay, 0, 0, 5);
+
+    wxStaticText *m_staticTextTail = new wxStaticText(this, wxID_ANY, _(" Tail (ms):"), wxDefaultPosition, wxDefaultSize, 0);
+    sbSizer_datachannel->Add(m_staticTextTail, 0, wxALIGN_CENTER_VERTICAL , 5);
+    m_txtCtrltail = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(40,-1), 0);
+    sbSizer_datachannel->Add(m_txtCtrltail, 0, 0, 5);
+
     bSizer30->Add(sbSizer_datachannel,0, wxALIGN_CENTER_HORIZONTAL|wxALL|wxEXPAND, 3);
  
     //------------------------------
@@ -477,6 +487,8 @@ void OptionsDlg::ExchangeData(int inout, bool storePersistent)
 	m_txtCtrlheader->SetValue(wxGetApp().m_data_header);
 	m_ckboxTAP->SetValue(wxGetApp().m_TAP);
 	m_txtCtrlnetdev->SetValue(wxGetApp().m_netdev);
+	m_txtCtrldelay->SetValue(wxString::Format(wxT("%i"),wxGetApp().m_delay_ms));
+	m_txtCtrltail->SetValue(wxString::Format(wxT("%i"),wxGetApp().m_tail_ms));
 
         /* Voice Keyer */
 
@@ -547,6 +559,12 @@ void OptionsDlg::ExchangeData(int inout, bool storePersistent)
 	wxGetApp().m_data_header = m_txtCtrlheader->GetValue();
 	wxGetApp().m_TAP = m_ckboxTAP->GetValue();
 	wxGetApp().m_netdev = m_txtCtrlnetdev->GetValue();
+	long delay_ms;
+	m_txtCtrldelay->GetValue().ToLong(&delay_ms);;
+	wxGetApp().m_delay_ms = (int)delay_ms;
+	long tail_ms;
+	m_txtCtrltail->GetValue().ToLong(&tail_ms);;
+	wxGetApp().m_tail_ms = (int)tail_ms;
 
         wxGetApp().m_boolHalfDuplex = m_ckHalfDuplex->GetValue();
         pConfig->Write(wxT("/Rig/HalfDuplex"), wxGetApp().m_boolHalfDuplex);
@@ -682,6 +700,8 @@ void OptionsDlg::ExchangeData(int inout, bool storePersistent)
             pConfig->Write(wxT("/DataChannel/Header"), wxGetApp().m_data_header);
             pConfig->Write(wxT("/DataChannel/TAP"), wxGetApp().m_TAP);
             pConfig->Write(wxT("/DataChannel/Netdev"), wxGetApp().m_netdev);
+            pConfig->Write(wxT("/DataChannel/Delay"), wxGetApp().m_delay_ms);
+            pConfig->Write(wxT("/DataChannel/Tail"), wxGetApp().m_tail_ms);
 
             pConfig->Flush();
         }

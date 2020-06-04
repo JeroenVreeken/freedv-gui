@@ -227,6 +227,8 @@ class MainApp : public wxApp
         wxString            m_data_header;
         bool                m_TAP;
         wxString            m_netdev;
+        int                 m_delay_ms;
+        int                 m_tail_ms;
 
         // LPC Post Filter
         bool                m_codec2LPCPostFilterEnable;
