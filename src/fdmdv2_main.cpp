@@ -1473,8 +1473,8 @@ void MainFrame::OnTimer(wxTimerEvent &evt)
 	if (data_to_send)
 	    g_tx_tail_cnt = 0;
 	
-        // Do a data-only TX
-	if (data_to_send && !g_tx) {
+        // Do a data-only TX, but only if not already receiving 
+	if (data_to_send && !g_tx && !g_State) {
 	    g_datatx = 1;
 	    m_btnTogPTT->SetValue(true); togglePTT();
 	}
@@ -4756,7 +4756,23 @@ void my_put_next_rx_char(void *callback_state, char c) {
 // Callbacks for data channel
 void my_datarx(void *arg, unsigned char *packet, size_t size)
 {
-    tap_rx(g_tap, packet, size);
+    if (size <= 12) {
+        char callsign[10];
+	int ssid;
+	bool multicast;
+	
+	eth_ar_mac2call(callsign, &ssid, &multicast, packet + 6);
+	
+	char callsignssid[16];
+	sprintf(callsignssid, "%s-%d ", callsign, ssid);
+	size_t i;
+	for (i = 0; i < strlen(callsignssid); i++) {
+	    short ch = callsignssid[i];
+	    codec2_fifo_write(g_rxDataOutFifo, &ch, 1);
+	}
+    } else {
+        tap_rx(g_tap, packet, size);
+    }
 }
 
 void my_datatx(void *arg, unsigned char *packet, size_t *size)
