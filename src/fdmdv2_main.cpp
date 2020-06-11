@@ -4165,23 +4165,14 @@ void txRxProcessing()
                 COMP tx_fdm_offset[nfreedv];
                 int  i;
 
-                if (g_mode == FREEDV_MODE_800XA) {
-                    /* 800XA doesn't support complex output just yet */
-		    if (!g_datatx)
-                        freedv_tx(g_pfreedv, outfreedv, infreedv);
-		    else
-		        freedv_datatx(g_pfreedv, outfreedv);
-                }
-                else {
-		    if (!g_datatx)
-		        freedv_comptx(g_pfreedv, tx_fdm, infreedv);
-	            else
-		        freedv_datacomptx(g_pfreedv, tx_fdm);
+                if (!g_datatx)
+	            freedv_comptx(g_pfreedv, tx_fdm, infreedv);
+	        else
+		    freedv_datacomptx(g_pfreedv, tx_fdm);
   
-                    freq_shift_coh(tx_fdm_offset, tx_fdm, g_TxFreqOffsetHz, freedv_get_modem_sample_rate(g_pfreedv), &g_TxFreqOffsetPhaseRect, nfreedv);
-                    for(i=0; i<nfreedv; i++)
-                        outfreedv[i] = tx_fdm_offset[i].real;
-                }
+                freq_shift_coh(tx_fdm_offset, tx_fdm, g_TxFreqOffsetHz, freedv_get_modem_sample_rate(g_pfreedv), &g_TxFreqOffsetPhaseRect, nfreedv);
+                for(i=0; i<nfreedv; i++)
+                    outfreedv[i] = tx_fdm_offset[i].real;
             }
 
             // Save modulated output file if requested
