@@ -4161,18 +4161,33 @@ void txRxProcessing()
                 }
             }
             else {
-                COMP tx_fdm[nfreedv];
-                COMP tx_fdm_offset[nfreedv];
-                int  i;
+	        int use_complex = 1;
+		
+		if (g_mode == FREEDV_MODE_800XA ||
+		    g_mode == FREEDV_MODE_2400B ||
+		    g_mode == FREEDV_MODE_6000)
+		{
+		    use_complex = 0;
+		}
+		
+		if (use_complex)
+		{
+                    COMP tx_fdm[nfreedv];
+                    COMP tx_fdm_offset[nfreedv];
+                    int  i;
 
-                if (!g_datatx)
-	            freedv_comptx(g_pfreedv, tx_fdm, infreedv);
-	        else
-		    freedv_datacomptx(g_pfreedv, tx_fdm);
+                    freedv_comptx(g_pfreedv, tx_fdm, infreedv);
   
-                freq_shift_coh(tx_fdm_offset, tx_fdm, g_TxFreqOffsetHz, freedv_get_modem_sample_rate(g_pfreedv), &g_TxFreqOffsetPhaseRect, nfreedv);
-                for(i=0; i<nfreedv; i++)
-                    outfreedv[i] = tx_fdm_offset[i].real;
+                    freq_shift_coh(tx_fdm_offset, tx_fdm, g_TxFreqOffsetHz, freedv_get_modem_sample_rate(g_pfreedv), &g_TxFreqOffsetPhaseRect, nfreedv);
+                    for(i=0; i<nfreedv; i++)
+                        outfreedv[i] = tx_fdm_offset[i].real;
+                } else {
+		    /* 'simple' real variant */
+                    if (!g_datatx)
+	                freedv_tx(g_pfreedv, outfreedv, infreedv);
+                    else
+	                freedv_datatx(g_pfreedv, outfreedv);
+		}
             }
 
             // Save modulated output file if requested
