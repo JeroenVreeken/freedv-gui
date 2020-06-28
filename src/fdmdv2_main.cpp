@@ -1153,7 +1153,7 @@ void MainFrame::OnTimer(wxTimerEvent &evt)
         if (wxGetApp().m_enable_checksum) {
 
             unsigned char checksum = 0;
-            char callsign_checksum_cr[MAX_CALLSIGN+1];
+            char callsign_checksum_cr[MAX_CALLSIGN+1+2];
 
             for(i=0; i<strlen(callsign); i++)
                 checksum += callsign[i];
@@ -4163,10 +4163,12 @@ void txRxProcessing()
             else {
 	        int use_complex = 1;
 		
-		if (g_mode == FREEDV_MODE_800XA ||
-		    g_mode == FREEDV_MODE_2400B ||
-		    g_mode == FREEDV_MODE_6000)
-		{
+		if (g_mode == FREEDV_MODE_800XA
+		    || g_mode == FREEDV_MODE_2400B
+#if defined(FREEDV_MODE_6000)
+		    || g_mode == FREEDV_MODE_6000
+#endif
+		) {
 		    use_complex = 0;
 		}
 		
